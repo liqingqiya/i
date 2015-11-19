@@ -47,6 +47,9 @@ event_init(void)
 void 
 event_add(int fd, event_handle_t handle, void *data)
 {
+	//debug
+	printf("enter event_add %d...\n",fd);
+
 	struct epoll_event event;
 	event_data_t *event_data;
 
@@ -90,19 +93,22 @@ event_del(int fd)
 void
 process_events(void)
 {
+	printf("enter process events...\n");
 	/*process the events list*/
 	struct epoll_event events[MAX_EVENTS];
-	int nfd  = -1;
+	int nevent  = -1;
  	event_data_t *event_ptr; 
 
 	for (;;) {
-		if (nfd = epoll_wait(epfd, events, MAX_EVENTS, -1) == -1) {
+		printf("before epoll_wait....\n");
+		if (nevent = epoll_wait(epfd, events, MAX_EVENTS, -1) == -1) {
 			perror("epoll_wait failed");
 			exit(EXIT_FAILURE);
 		}
 
+		printf("after epoll_wait %d....\n", nevent);
 		int i = 0;
-		for (;i < nfd; i++) {
+		for (;i < nevent;i++) {
 			event_ptr = (event_data_t *)(events[i].data.ptr);
 			/*process handle*/
 			event_ptr->handle(event_ptr->fd, event_ptr->data);
