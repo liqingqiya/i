@@ -589,6 +589,10 @@ int main(int argc, char **argv)
 	if (is_daemon && daemon(0, 0))
 		exit(1);
 
+	/*lq: 	ipc_init 
+			declare in tgtd.h
+			define in mgmt.c
+	*/
 	err = ipc_init();
 	if (err)
 		exit(1);

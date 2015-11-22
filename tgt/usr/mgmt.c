@@ -41,6 +41,7 @@
 #include "driver.h"
 #include "util.h"
 
+/*lq: todo? */
 enum mgmt_task_state {
 	MTASK_STATE_HDR_RECV,
 	MTASK_STATE_PDU_RECV,
@@ -584,6 +585,7 @@ static struct mgmt_task *mtask_alloc(void)
 		eprintf("can't allocate mtask\n");
 		return NULL;
 	}
+	/*lq: first set the value, when accpet,,,*/
 	mtask->mtask_state = MTASK_STATE_HDR_RECV;
 
 	dprintf("mtask:%p\n", mtask);
@@ -609,8 +611,10 @@ static int mtask_received(struct mgmt_task *mtask, int fd)
 	set_mtask_result(mtask, adm_err);
 
 	/* whatever the result of mtask execution, a response is sent */
+	/*lq: change the state*/
 	mtask->mtask_state = MTASK_STATE_HDR_SEND;
 	mtask->done = 0;
+	/*lq: modify the event, only wait write event*/
 	err = tgt_event_modify(fd, EPOLLOUT);
 	if (err)
 		eprintf("failed to modify mgmt task event out\n");
@@ -687,6 +691,7 @@ static void mtask_recv_send_handler(int fd, int events, void *data)
 				if (rsp->len == sizeof(*rsp))
 					goto out;
 				mtask->done = 0;
+				/*lq: write the rsq, then change the state*/
 				mtask->mtask_state = MTASK_STATE_PDU_SEND;
 			}
 		} else
@@ -698,6 +703,7 @@ static void mtask_recv_send_handler(int fd, int events, void *data)
 		err = concat_write(&mtask->rsp_concat, fd, mtask->done);
 		if (err >= 0) {
 			mtask->done += err;
+			/*lq: done*/
 			if (mtask->done == (rsp->len - sizeof(*rsp)))
 				goto out;
 		} else

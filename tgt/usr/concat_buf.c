@@ -70,6 +70,7 @@ int concat_buf_finish(struct concat_buf *b)
 	return b->err;
 }
 
+/*lq: write then buf*/
 int concat_write(struct concat_buf *b, int fd, int offset)
 {
 	concat_buf_finish(b);
