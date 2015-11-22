@@ -11,6 +11,7 @@ server
 #include <fcntl.h>
 #include <signal.h>
 
+//#include "log.h"
 #include "event.h"
 
 void ipc_recv_send(int fd, void *data);
@@ -25,6 +26,7 @@ void
 ipc_accpet(int fd, void *data)
 {
 	printf("enter ipc accpet handle ...\n");
+	//dprintf("enter ipc accpet handle ...\n");
 
 	struct sockaddr_un cli_add;
 	int cli_fd, cli_len, read_n;
@@ -78,6 +80,7 @@ server_init(void)
 int 
 main(int argc, char **argv)
 {
+	//dprintf("begin server...\n");
 	printf("begin server...\n");
 
 	signal(SIGPIPE, SIG_IGN);
