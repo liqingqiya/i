@@ -1,0 +1,52 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.9~svn20110310	//
+INIT_LIST_HEAD	list.h	21;"	d
+MAX_EVENTS	event.h	13;"	d
+_I_EVENT_H	event.h	6;"	d
+_LLIST_H	list.h	12;"	d
+__list_append	list.h	/^__list_append (struct list_head *list, struct list_head *head)$/;"	f
+__list_splice	list.h	/^__list_splice (struct list_head *list, struct list_head *head)$/;"	f
+data	event.h	/^	void 				*data;$/;"	m	struct:__anon1
+epfd	event.c	/^static int epfd = -1 ;$/;"	v	file:
+event_add	event.c	/^event_add(int fd, event_handle_t handle, void *data)$/;"	f
+event_data_t	event.h	/^} event_data_t;$/;"	t	typeref:struct:__anon1
+event_del	event.c	/^event_del(int fd)$/;"	f
+event_handle_t	event.h	/^typedef void (*event_handle_t)(int fd, void *data);$/;"	t
+event_init	event.c	/^event_init(void)$/;"	f
+events_list	event.c	/^static struct list_head events_list;$/;"	v	typeref:struct:list_head	file:
+fd	event.h	/^	int 				fd;$/;"	m	struct:__anon1
+find_event_by_fd	event.c	/^find_event_by_fd(int fd)$/;"	f	file:
+handle	event.h	/^	event_handle_t 			handle;$/;"	m	struct:__anon1
+ipc_accpet_handle	server.c	/^ipc_accpet_handle(int fd, void *data)$/;"	f
+list	event.h	/^	struct list_head		list;$/;"	m	struct:__anon1	typeref:struct:__anon1::list_head
+list_add	list.h	/^list_add (struct list_head *new, struct list_head *head)$/;"	f
+list_add_order	list.h	/^list_add_order (struct list_head *new, struct list_head *head,$/;"	f
+list_add_tail	list.h	/^list_add_tail (struct list_head *new, struct list_head *head)$/;"	f
+list_append	list.h	/^list_append (struct list_head *list, struct list_head *head)$/;"	f
+list_append_init	list.h	/^list_append_init (struct list_head *list, struct list_head *head)$/;"	f
+list_del	list.h	/^list_del (struct list_head *old)$/;"	f
+list_del_init	list.h	/^list_del_init (struct list_head *old)$/;"	f
+list_empty	list.h	/^list_empty (struct list_head *head)$/;"	f
+list_entry	list.h	183;"	d
+list_for_each	list.h	187;"	d
+list_for_each_entry	list.h	191;"	d
+list_for_each_entry_reverse	list.h	203;"	d
+list_for_each_entry_safe	list.h	197;"	d
+list_for_each_entry_safe_reverse	list.h	209;"	d
+list_head	list.h	/^struct list_head {$/;"	s
+list_move	list.h	/^list_move (struct list_head *list, struct list_head *head)$/;"	f
+list_move_tail	list.h	/^list_move_tail (struct list_head *list, struct list_head *head)$/;"	f
+list_splice	list.h	/^list_splice (struct list_head *list, struct list_head *head)$/;"	f
+list_splice_init	list.h	/^list_splice_init (struct list_head *list, struct list_head *head)$/;"	f
+main	client.c	/^main(int argc, char **argv)$/;"	f
+main	iscsi.c	/^main(void) $/;"	f
+main	server.c	/^main(int argc, char **argv)$/;"	f
+main	test_server.c	/^main(int argc, char **argv)$/;"	f
+next	list.h	/^	struct list_head *next;$/;"	m	struct:list_head	typeref:struct:list_head::list_head
+prev	list.h	/^	struct list_head *prev;$/;"	m	struct:list_head	typeref:struct:list_head::list_head
+process_events	event.c	/^process_events(void)$/;"	f
+server_init	server.c	/^server_init(void)$/;"	f
