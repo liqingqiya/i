@@ -101,7 +101,7 @@ process_events(void)
 
 	for (;;) {
 		printf("before epoll_wait....\n");
-		if (nevent = epoll_wait(epfd, events, MAX_EVENTS, -1) == -1) {
+		if ((nevent = epoll_wait(epfd, events, MAX_EVENTS, -1)) == -1) {
 			perror("epoll_wait failed");
 			exit(EXIT_FAILURE);
 		}
