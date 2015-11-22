@@ -16,7 +16,7 @@ main(int argc, char **argv)
 	int len;
 	struct sockaddr_un address;
 	int result;
-	char ch = 'A';
+	char ch = 'B';
 	sockfd = socket(AF_LOCAL, SOCK_STREAM, 0);
 
 	address.sun_family = AF_LOCAL;
@@ -30,11 +30,13 @@ main(int argc, char **argv)
 		perror("oops:client");
 		exit(1);
 	}
-	
+
+	printf("write to server = %c\n", ch);	
 	write(sockfd, &ch, 1);
 
 	read(sockfd, &ch, 1);
-	printf("char from server = %c\n", ch);
+	printf("read from server = %c\n", ch);
+	
 	close(sockfd);
 	exit(0);
 

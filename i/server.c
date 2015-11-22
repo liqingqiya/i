@@ -9,25 +9,54 @@ server
 #include <unistd.h>
 #include <stdlib.h>
 #include <fcntl.h>
+#include <signal.h>
 
 #include "event.h"
 
+void ipc_recv_send(int fd, void *data);
+void ipc_accpet(int fd, void *data);
+void server_init(void);
+
+static void signal_catch(int signo)
+{
+}
+
 void 
-ipc_accpet_handle(int fd, void *data)
+ipc_accpet(int fd, void *data)
 {
 	printf("enter ipc accpet handle ...\n");
 
-	char buf[128];
 	struct sockaddr_un cli_add;
 	int cli_fd, cli_len, read_n;
 
 	cli_len = sizeof(cli_add);
 	cli_fd = accept(fd, (struct sockaddr *)&cli_add, &cli_len);
 	
-	read_n = read(fd, buf, 128);
-	printf("buf: %s\n", buf);
+	event_add(cli_fd, ipc_recv_send, NULL);
 
 	return ;
+}
+
+void 
+ipc_recv_send(int fd, void *data)
+{
+	int read_n;
+	char ch;
+
+	read_n = read(fd, &ch, 1);
+	if (read_n == -1) {
+		perror("[ipc_recv_sed]: read failed");
+		exit(EXIT_FAILURE);	
+	} else if (read_n == 0) {
+		close(fd);
+		return;
+	}
+	printf("[ipc_recv_send] read from client: %c\n", ch);
+
+	ch++;
+	
+	printf("[ipc_recv_send] write to client: %c\n", ch);
+	write(fd, &ch, 1);
 }
 
 void 
@@ -43,13 +72,16 @@ server_init(void)
 	bind(srv_fd, (struct sockaddr *)&srv_add, sizeof(srv_add));
 	listen(srv_fd, 128);
 	
-	event_add(srv_fd, ipc_accpet_handle, NULL);
+	event_add(srv_fd, ipc_accpet, NULL);
 }
 
 int 
 main(int argc, char **argv)
 {
 	printf("begin server...\n");
+
+	signal(SIGPIPE, SIG_IGN);
+	// signal(SIGTERM, SIG_IGN)
 
 	//init epoll event
 	event_init();
