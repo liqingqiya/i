@@ -1,11 +1,14 @@
-server: server.o event.o
-	@gcc -g -o server server.o event.o
+server: server.o event.o log.o
+	@gcc -g -o server server.o event.o log.o
 
-server.o: server.c event.h
+server.o: server.c event.h log.h
 	@gcc -g -c server.c
 
-event.o: event.h event.c
+event.o: event.c event.h log.h
 	@gcc -g -c event.c
+
+log.o: log.c log.h
+	@gcc -g -c log.c
 
 client:
 	@gcc -g -o client client.c

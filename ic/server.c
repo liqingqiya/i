@@ -11,8 +11,13 @@ server
 #include <fcntl.h>
 #include <signal.h>
 
-//#include "log.h"
+#include "log.h"
 #include "event.h"
+
+/*must have this declare*/
+extern int is_debug;
+
+static char program_name[] = "server";
 
 void ipc_recv_send(int fd, void *data);
 void ipc_accpet(int fd, void *data);
@@ -25,8 +30,7 @@ static void signal_catch(int signo)
 void 
 ipc_accpet(int fd, void *data)
 {
-	printf("enter ipc accpet handle ...\n");
-	//dprintf("enter ipc accpet handle ...\n");
+	dprintf("enter ipc accpet handle ...\n");
 
 	struct sockaddr_un cli_add;
 	int cli_fd, cli_len, read_n;
@@ -53,11 +57,11 @@ ipc_recv_send(int fd, void *data)
 		close(fd);
 		return;
 	}
-	printf("[ipc_recv_send] read from client: %c\n", ch);
+	dprintf("[ipc_recv_send] read from client: %c\n", ch);
 
 	ch++;
 	
-	printf("[ipc_recv_send] write to client: %c\n", ch);
+	dprintf("[ipc_recv_send] write to client: %c\n", ch);
 	write(fd, &ch, 1);
 }
 
@@ -80,8 +84,7 @@ server_init(void)
 int 
 main(int argc, char **argv)
 {
-	//dprintf("begin server...\n");
-	printf("begin server...\n");
+	dprintf("begin server...\n");
 
 	signal(SIGPIPE, SIG_IGN);
 	// signal(SIGTERM, SIG_IGN)

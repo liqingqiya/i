@@ -6,6 +6,8 @@ event drive
 
 #include "list.h"
 #include "event.h"
+/*log.h must behind from event.h*/
+#include "log.h"
 
 //create epoll
 static int epfd = -1 ;
@@ -38,7 +40,7 @@ event_init(void)
 	epfd = epoll_create(MAX_EVENTS);
 	if (epfd == -1)
 	{
-		perror("epoll_create");
+		eprintf("epoll_create");
 		exit(EXIT_FAILURE);
 	}
 	return;
@@ -48,7 +50,7 @@ void
 event_add(int fd, event_handle_t handle, void *data)
 {
 	//debug
-	printf("enter event_add %d...\n",fd);
+	dprintf("enter event_add %d...\n",fd);
 
 	struct epoll_event event;
 	event_data_t *event_data;
@@ -64,7 +66,7 @@ event_add(int fd, event_handle_t handle, void *data)
 	/*add to epoll*/
 	if(epoll_ctl(epfd, EPOLL_CTL_ADD, fd, &event) == -1)
 	{
-		perror("epoll_ctl add failed");
+		eprintf("epoll_ctl add failed");
 		exit(EXIT_FAILURE);
 	}
 
@@ -93,20 +95,20 @@ event_del(int fd)
 void
 process_events(void)
 {
-	printf("enter process events...\n");
+	dprintf("enter process events...\n");
 	/*process the events list*/
 	struct epoll_event events[MAX_EVENTS];
 	int nevent  = -1;
  	event_data_t *event_ptr; 
 
 	for (;;) {
-		printf("before epoll_wait....\n");
+		dprintf("before epoll_wait....\n");
 		if ((nevent = epoll_wait(epfd, events, MAX_EVENTS, -1)) == -1) {
-			perror("epoll_wait failed");
+			eprintf("epoll_wait failed");
 			exit(EXIT_FAILURE);
 		}
 
-		printf("after epoll_wait %d....\n", nevent);
+		dprintf("after epoll_wait %d....\n", nevent);
 		int i = 0;
 		for (;i < nevent;i++) {
 			event_ptr = (event_data_t *)(events[i].data.ptr);

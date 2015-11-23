@@ -9,6 +9,8 @@ client
 #include <unistd.h>
 #include <stdlib.h>
 
+#include "log.h"
+
 int
 main(int argc, char **argv)
 {
@@ -27,15 +29,15 @@ main(int argc, char **argv)
 	result = connect(sockfd, (struct sockaddr *)&address, len);
 	if (result == -1)
 	{
-		perror("oops:client");
+		eprintf("oops:client");
 		exit(1);
 	}
 
-	printf("write to server = %c\n", ch);	
+	dprintf("write to server = %c\n", ch);	
 	write(sockfd, &ch, 1);
 
 	read(sockfd, &ch, 1);
-	printf("read from server = %c\n", ch);
+	dprintf("read from server = %c\n", ch);
 	
 	close(sockfd);
 	exit(0);
