@@ -9,6 +9,7 @@
 
 #include "tgtadm_error.h"
 
+/*lq: operation*/
 enum tgtadm_op {
 	OP_NEW,
 	OP_DELETE,
@@ -21,6 +22,7 @@ enum tgtadm_op {
 	OP_STOP,
 };
 
+/*lq: mode*/
 enum tgtadm_mode {
 	MODE_SYSTEM,
 	MODE_TARGET,
@@ -38,6 +40,7 @@ enum tgtadm_account_dir {
 	ACCOUNT_TYPE_OUTGOING,
 };
 
+/*lq: communicat with tgtd in this struct, send to the tgtd*/
 struct tgtadm_req {
 	enum tgtadm_mode mode;
 	enum tgtadm_op op;
@@ -54,6 +57,7 @@ struct tgtadm_req {
 	uint32_t force;
 };
 
+/*lq: recive from the tgtd like this struct*/
 struct tgtadm_rsp {
 	uint32_t err;
 	uint32_t len;
