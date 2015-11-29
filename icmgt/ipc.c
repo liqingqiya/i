@@ -1,7 +1,7 @@
 /*
-该文件负责接受终端用户的请求逻辑
-终端客户发过来的是json字符串
-该文件负责监听，解析，并执行命令
+* 该文件负责接受终端用户的请求逻辑
+* 终端客户发过来的是json字符串
+* 该文件负责监听，解析，并执行命令
 */
 
 #include <ctype.h>
@@ -31,43 +31,62 @@
 static int ipc_fd;
 char icmgt_path[256];
 
-static struct ipc_task *ipc_task_alloc(void);
-static void ipc_task_free(struct ipc_task *ipc_task);
+struct ipc_task *ipc_task_alloc(void);
+void ipc_task_free(struct ipc_task *ipc_task);
 
 /**/
 enum ipc_task_state {
-    MTASK_STATE_HDR_RECV,
-    MTASK_STATE_PDU_RECV,
-    MTASK_STATE_HDR_SEND,
-    MTASK_STATE_PDU_SEND,
+    IPC_TASK_STATE_SIZE_RECV,       /*size 4 bytes*/
+    IPC_MTASK_STATE_STR_RECV,       /*string*/
+    // IPC_MTASK_STATE_SIZE_SEND,      /*size*/
+    IPC_MTASK_STATE_STR_SEND,       /*string*/
 };
 
 /**/
 struct ipc_task {
     enum ipc_task_state ipc_state;
     int retry;
-    int done;
-    struct tgtadm_req req;
-    char *req_buf;
-    int req_bsize;
-    struct tgtadm_rsp rsp;
-    struct concat_buf rsp_concat;
+    int done;                            /**/
+    struct tgtadm_req req;              /**/
+    char *req_buf;                       /**/
+    int req_bsize;                      /**/
+    struct tgtadm_rsp rsp;              /**/
+    struct concat_buf rsp_concat;       /**/
 };
 
 
+/*allocate a ipc task struct*/
 static struct ipc_task *
 ipc_task_alloc(void)
 {
+    struct ipc_task *itask;
+    itask = zalloc(sizeof(*itask));
+    if (!itask) {
+        eprintf("can't allocate itask\n");
+        return NULL;
+    }
 
+    itask->itask_state = IPC_TASK_STATE_SIZE_RECV;
+    dprintf("itask:%p\n", itask);
+    return itask;
 }
+
 
 static void
-ipc_task_free(struct ipc_task *task)
+ipc_task_free(struct ipc_task *itask)
 {
-
+    dprintf("itask:%p\n", itask);
+    if (itask->req_buf) {
+        /*req_buf*/
+        free(itask->req_buf);
+    }
+    /*rsp_concat*/
+    concat_buf_release(&itask->rsp_concat);
+    free(itask);
 }
 
-static int 
+
+int 
 ipc_accept(int accept_fd)
 {
     struct sockaddr addr;
@@ -82,7 +101,7 @@ ipc_accept(int accept_fd)
 }
 
 
-static void 
+void 
 ipc_accept_handler(int accept_fd, int events, void *data)
 {
     int fd, err;
@@ -118,10 +137,108 @@ out:
     return;
 }
 
-static void 
+void 
 ipc_recv_send_handler(int accept_fd, int events, void *data)
 {
-    
+    int err, len;
+    char *p;
+    struct mgmt_task *mtask = data;
+    struct tgtadm_req *req = &mtask->req;
+    struct tgtadm_rsp *rsp = &mtask->rsp;
+
+    switch (mtask->mtask_state) {
+    case MTASK_STATE_HDR_RECV:
+        len = sizeof(*req) - mtask->done;
+        err = read(fd, (char *)req + mtask->done, len);
+        if (err > 0) {
+            mtask->done += err;
+            if (mtask->done == sizeof(*req)) {
+                mtask->req_bsize = req->len - sizeof(*req);
+                if (!mtask->req_bsize) {
+                    err = mtask_received(mtask, fd);
+                    if (err)
+                        goto out;
+                } else {
+                    /* the pdu exists */
+                    if (mtask->req_bsize > MAX_MGT_BUFSIZE) {
+                        eprintf("mtask buffer len: %d too large\n",
+                            mtask->req_bsize);
+                        mtask->req_bsize = 0;
+                        goto out;
+                    }
+                    mtask->req_buf = zalloc(mtask->req_bsize);
+                    if (!mtask->req_buf) {
+                        eprintf("can't allocate mtask buffer len: %d\n",
+                            mtask->req_bsize);
+                        mtask->req_bsize = 0;
+                        goto out;
+                    }
+                    mtask->mtask_state = MTASK_STATE_PDU_RECV;
+                    mtask->done = 0;
+                }
+            }
+        } else
+            if (errno != EAGAIN)
+                goto out;
+
+        break;
+    case MTASK_STATE_PDU_RECV:
+        len = mtask->req_bsize - mtask->done;
+        err = read(fd, mtask->req_buf + mtask->done, len);
+        if (err > 0) {
+            mtask->done += err;
+            if (mtask->done == mtask->req_bsize) {
+                err = mtask_received(mtask, fd);
+                if (err)
+                    goto out;
+            }
+        } else
+            if (errno != EAGAIN)
+                goto out;
+
+        break;
+    case MTASK_STATE_HDR_SEND:
+        p = (char *)rsp + mtask->done;
+        len = sizeof(*rsp) - mtask->done;
+
+        err = write(fd, p, len);
+        if (err > 0) {
+            mtask->done += err;
+            if (mtask->done == sizeof(*rsp)) {
+                if (rsp->len == sizeof(*rsp))
+                    goto out;
+                mtask->done = 0;
+                /*lq: write the rsq, then change the state*/
+                mtask->mtask_state = MTASK_STATE_PDU_SEND;
+            }
+        } else
+            if (errno != EAGAIN)
+                goto out;
+
+        break;
+    case MTASK_STATE_PDU_SEND:
+        err = concat_write(&mtask->rsp_concat, fd, mtask->done);
+        if (err >= 0) {
+            mtask->done += err;
+            /*lq: done*/
+            if (mtask->done == (rsp->len - sizeof(*rsp)))
+                goto out;
+        } else
+            if (errno != EAGAIN)
+                goto out;
+
+        break;
+    default:
+        eprintf("unknown state %d\n", mtask->mtask_state);
+    }
+
+    return;
+out:
+    if (req->mode == MODE_SYSTEM && req->op == OP_DELETE && !rsp->err)
+        system_active = 0;
+    tgt_event_del(fd);
+    close(fd);
+    mtask_free(mtask);
 }
 
 /*
@@ -178,4 +295,11 @@ ipc_init(void)
 close_ipc_fd:
     close(fd);
     return -1;
+}
+
+void 
+ipc_exit(void)
+{
+    event_del(ipc_fd);
+    close(ipc_fd);
 }

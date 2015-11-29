@@ -1,61 +1,39 @@
 /*
-event drive
+
 */
 
 #include <stdlib.h>
 
 #include "list.h"
 #include "event.h"
-/*log.h must behind from event.h*/
-#include "log.h"
+#include "log.h" 	/*log.h must behind from event.h*/
 
-//create epoll
+
 static int epfd = -1 ;
-
-//create event list
-static struct list_head events_list;
+static LIST_HEAD(ep_events_list);
 
 
-static void *
-find_event_by_fd(int fd)
+static event_data_t *
+ep_event_lookup(int fd)
 {
-	event_data_t *ed = NULL;
-	/*for each list entry*/
-	list_for_each_entry(ed, &events_list, list)
-	{
-		if (ed->fd == fd)
-		{
-			return ed;
-		}
+	event_data_t *edt;
+
+	list_for_each_entry(edt, ep_events_list, list) {
+		if (edt->fd == fd)
+			return edt;
 	}
 	return NULL;
 }
 
 
-void 
-event_init(void)
+void
+ep_event_add(int epfd, int fd, event_handle_t handle, void *data)
 {
-	INIT_LIST_HEAD(&events_list);
-
-	epfd = epoll_create(MAX_EVENTS);
-	if (epfd == -1)
-	{
-		eprintf("epoll_create");
-		exit(EXIT_FAILURE);
-	}
-	return;
-}
-
-void 
-event_add(int fd, event_handle_t handle, void *data)
-{
-	//debug
-	dprintf("enter event_add %d...\n",fd);
+	// dprintf("enter ep_event_add %d...\n",fd);
 
 	struct epoll_event event;
 	event_data_t *event_data;
 
-	/*create a event*/
 	event_data = malloc(sizeof(event_data_t));
 	event_data->handle = handle;
 	event_data->fd = fd;
@@ -63,59 +41,110 @@ event_add(int fd, event_handle_t handle, void *data)
 	event.events = EPOLLIN;
 	event.data.ptr = event_data;
 	
-	/*add to epoll*/
 	if(epoll_ctl(epfd, EPOLL_CTL_ADD, fd, &event) == -1)
 	{
 		eprintf("epoll_ctl add failed");
 		exit(EXIT_FAILURE);
 	}
 
-	/*add to events list*/
-	list_add(&(event_data->list), &events_list);
-	
+	list_add(&(event_data->list), &ep_events_list);
 	return;
 }
 
-void
-event_del(int fd)
-{
 
-	/*delete from epoll*/
+void
+ep_event_del(int epfd, int fd)
+{
 	epoll_ctl(epfd, EPOLL_CTL_DEL, fd, NULL);
 
-	/*delete from events list*/
-	event_data_t *ed = NULL;
-	ed = (event_data_t*)(find_event_by_fd(fd));
-	list_del(&(ed->list));
+	event_data_t *edt = NULL;
+	edt = (event_data_t*)(ep_event_lookup(fd));
 
+	list_del(&(edt->list));
 	return;
 }
 
 
-void
+int 
+ep_event_modify(int epfd, int fd, int events)
+{
+	struct epoll_event ev;
+	struct event_data_t *edt;
+
+	edt = ep_event_lookup(fd, ep_events_list);
+	if (!edt) {
+		eprintf("Cannot find event %d\n", fd);
+		return -EINVAL;
+	}
+
+	memset(&ev, 0, sizeof(ev));
+	ev.events = events;
+	ev.data.ptr = edt;
+
+	return epoll_ctl(epfd, EPOLL_CTL_MOD, fd, &ev);
+}
+
+
+void 
+event_add(int fd, event_handle_t handle, void *data)
+{
+    return ep_event_add(epfd, fd, handle, data);
+}
+
+
+void 
+event_del(int fd)
+{
+    return ep_event_del(epfd, fd);
+}
+
+
+void 
+event_modify(int fd, int events)
+{
+    return ep_event_modify(epfd, fd, events);
+}
+
+
+void 
 process_events(void)
 {
-	dprintf("enter process events...\n");
-	/*process the events list*/
-	struct epoll_event events[MAX_EVENTS];
-	int nevent  = -1;
- 	event_data_t *event_ptr; 
+    dprintf("enter process events...\n");
+    /*process the events list*/
+    struct epoll_event events[MAX_EVENTS];
+    int nevent  = -1;
+    event_data_t *event_ptr; 
 
-	for (;;) {
-		dprintf("before epoll_wait....\n");
-		if ((nevent = epoll_wait(epfd, events, MAX_EVENTS, -1)) == -1) {
-			eprintf("epoll_wait failed");
-			exit(EXIT_FAILURE);
-		}
+    for (;;) {
+        if ((nevent = epoll_wait(epfd, events, MAX_EVENTS, -1)) == -1) {
+            eprintf("epoll_wait failed");
+            exit(EXIT_FAILURE);
+        }
 
-		dprintf("after epoll_wait %d....\n", nevent);
-		int i = 0;
-		for (;i < nevent;i++) {
-			event_ptr = (event_data_t *)(events[i].data.ptr);
-			/*process handle*/
-			event_ptr->handle(event_ptr->fd, event_ptr->data);
-		}
+        int i = 0;
+        for (;i < nevent;i++) {
+            event_ptr = (event_data_t *)(events[i].data.ptr);
+            event_ptr->handle(event_ptr->fd, events[i].events, event_ptr->data);
+        }
 
-	}
-	return;
+    }
+    return;
 }
+
+
+void 
+event_init(void)
+{
+    INIT_LIST_HEAD(&ep_events_list);
+
+    epfd = epoll_create(MAX_EVENTS);
+    if (epfd == -1)
+    {
+        eprintf("epoll_create");
+        exit(EXIT_FAILURE);
+    }
+
+    return;
+}
+
+
